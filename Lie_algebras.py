@@ -100,7 +100,7 @@ def lin_ind(Ops: list):
 
 def complete_algebra_inner(Ops: list, start: int):
     """Find all linearly independent operators from commutations of operators in Ops[0:len(Ops)] with operators in Ops[start:len(Ops)]."""
-    new_Ops = Ops
+    new_Ops = Ops.copy()
     for i in range(len(Ops)):
         for j in range(max(i, start), len(Ops)):
             new_op = comm(new_Ops[i], new_Ops[j])
@@ -133,15 +133,9 @@ def complete_algebra(Ops: list, max: int, start: int = 0):
             "Given operators are not linearly independent."
         )
 
-    old_Ops = Ops
+    old_Ops = Ops.copy()
 
     while True:
-        # stop if maximum operators in algebra reached
-        if len(old_Ops) > max:
-            raise MaxOperatorsError(
-                f"Maximum of {max} operators in algebra reached."
-            )
-
         # find new set of linearly independent operators to extend old_Ops
         new_Ops = complete_algebra_inner(old_Ops, start)
 
@@ -154,6 +148,12 @@ def complete_algebra(Ops: list, max: int, start: int = 0):
         else:
             start = len(old_Ops)
             old_Ops = new_Ops
+
+        # stop if maximum operators in algebra reached
+        if len(old_Ops) > max:
+            raise MaxOperatorsError(
+                f"Maximum of {max} operators in uncomplete algebra reached."
+            )
 
 
 def find_algebra(Lie_0: list, Lie_1: list, max: int):
@@ -178,7 +178,7 @@ def find_algebra(Lie_0: list, Lie_1: list, max: int):
     if not complete_algebra(Lie_0, len(Lie_0) + 2) == Lie_0:
         raise LieAlgebraError(f"{Lie_0} is not a Lie algebra")
 
-    Ops = Lie_0
+    Ops = Lie_0.copy()
     # append every commutation that is linearly independent
     for i in range(len(Lie_0)):
         for j in range(len(Lie_1)):
