@@ -156,16 +156,16 @@ def complete_algebra(Ops: list, max: int, start: int = 0):
             )
 
 
-def find_algebra(Lie_0: list, Lie_1: list, max: int):
+def find_algebra(Op_0: list, Op_1: list, max: int):
     """
-    Extend Lie algebra Lie_0 to include commutations with operators in Lie_1.
+    Extend operators Op_0 to include commutations with operators in Op_1.
 
     Parameters
     ----------
-    Lie_0 : list
-        List of operators forming a Lie algebra
-    Lie_1 : list
-        List of operators to extend Lie_0 with commutations of
+    Op_0 : list
+        List of operators to extend (defines invariants)
+    Op_1 : list
+        List of operators to extend Op_0 with commutations of (defines H)
     max : int
         Cut off after max number of operators in Lie algebra found
 
@@ -174,18 +174,14 @@ def find_algebra(Lie_0: list, Lie_1: list, max: int):
     Lie_alg : list
         List of operators in extended Lie algebra
     """
-    # check if Lie_0 is a Lie algebra
-    if not complete_algebra(Lie_0, len(Lie_0) + 2) == Lie_0:
-        raise LieAlgebraError(f"{Lie_0} is not a Lie algebra")
-
-    Ops = Lie_0.copy()
+    Ops = Op_0.copy()
     # append every commutation that is linearly independent
-    for i in range(len(Lie_0)):
-        for j in range(len(Lie_1)):
-            new_op = comm(Lie_0[i], Lie_1[j])
+    for i in range(len(Op_0)):
+        for j in range(len(Op_1)):
+            new_op = comm(Op_0[i], Op_1[j])
             Ops.append(new_op)
             if not lin_ind(Ops):
                 Ops.pop()
-    # complete the algebra, starting from added operators
-    Lie_alg = complete_algebra(Ops, max, start=len(Lie_0) - 1)
+    # complete the algebra
+    Lie_alg = complete_algebra(Ops, max)
     return Lie_alg
