@@ -8,19 +8,22 @@ DONE:
 - function to extend lie algebra with commutations of another lie algebra
 - turn into Python script, make folder pretty
 - commutation function
+- create tests from examples in paper
 
 TO DO:
-- create tests from examples in paper
+- make tests from paper more general for n and tidy up with modulo
 - function to check linear independence via QR decomp
 - function returning linear decomposition of an operator into Lie algebra operators
 - function reducing list of operators to minimal set of linearly independent operators
+- try out keeping everything in Pauli operator decomp?
+- given A_n find B st [A_n, B] = 0 for all n (code up slow way finding overlap of n=1 case?)
 
 
 ##### Problems
 
 FIXED:
 - original Ops in complete_algebra need to be linearly independent: check "complete_algebra([X, X], 5)"
+- final Lie algebra is list of huge matrices, not their tensor decomposition (way to simplify down from linear dependencies?)
 
 NOT FIXED:
 - cannot determine how an operator is linearly dependent on operators in algebra (use qr decomp: cols of r give dependencies)
-- final Lie algebra is list of huge matrices, not their tensor decomposition (way to simplify down from linear dependencies?)
