@@ -185,3 +185,35 @@ def find_algebra(Op_0: list, Op_1: list, max: int):
     # complete the algebra
     Lie_alg = complete_algebra(Ops, max)
     return Lie_alg
+
+def decompose(M):
+    """
+    Decompose matrix M into a linear combination of tensors of Pauli matrices.
+    
+    Parameters
+    ----------
+    M : np.ndarray
+        Matrix to decompose
+        
+    Returns
+    -------
+    coeff : list
+        List of coefficients of Pauli basis
+    b2 : list
+        List of Pauli matrix tensors forming basis
+    """
+    # define basis matrices
+    n = int(np.log2(M.shape[0]))
+    # construct basis
+    b1 = [I, X, Y, Z]
+    b2 = [I, X, Y, Z]
+    for i in range(n-1):
+        b2 = np.kron(b1, b2)
+    
+    # find coefficients
+    coeff = []
+    for i in range(len(b2)):
+        coeff.append(1/2**n * np.trace(b2[i].conj().T@M))
+
+    return coeff, b2
+    
