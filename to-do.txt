@@ -9,14 +9,18 @@ DONE:
 - turn into Python script, make folder pretty
 - commutation function
 - create tests from examples in paper
+- create class for Pauli decomposed operators
 
 TO DO:
 - make tests from paper more general for n and tidy up with modulo
 - function to check linear independence via QR decomp
 - function returning linear decomposition of an operator into Lie algebra operators
 - function reducing list of operators to minimal set of linearly independent operators
-- try out keeping everything in Pauli operator decomp?
-- given A_n find B st [A_n, B] = 0 for all n (code up slow way finding overlap of n=1 case?)
+- given A_n find B st [A_n, B] = 0 for all n (code up slow way finding overlap of n=1 case? works for n=2)
+- code up paocomm function
+- check out if functions in mathematica useful to convert
+- create a pfind_algebra and pcomplete_algebra
+- put find_comm into package?
 
 
 ##### Problems
