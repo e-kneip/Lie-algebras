@@ -40,6 +40,28 @@ def comm(A: np.ndarray, B: np.ndarray):
     C = A @ B - B @ A
     return C
 
+comm = np.vectorize(comm)
+
+def acomm(A: np.ndarray, B: np.ndarray):
+    """
+    Calculate anticommutator of operators: [A, B] = AB+BA.
+
+    Parameters
+    ----------
+    A : np.ndarray
+        First operator
+    B : np.ndarray
+        Second operator
+
+    Returns
+    -------
+    C : np.ndarray
+        Anticommutation of A and B, [A, B] = AB+BA
+    """
+    C = A @ B + B @ A
+    return C
+
+acomm = np.vectorize(acomm)
 
 def tensor(W: np.ndarray, dim: int, start: int, end: int = 0):
     """
@@ -216,4 +238,116 @@ def decompose(M):
         coeff.append(1/2**n * np.trace(b2[i].conj().T@M))
 
     return coeff, b2
+
+
+# keeping everything in Pauli decomposition from here on...
+
+class Pauli:
+    """
+    Class for tensor products of Pauli matrices.
+    """
+
+    def __init__(self, paulis: list, coeff: float or complex or int = 1):
+        """
+        Initialise Pauli tensor product.
+
+        Parameters
+        ----------
+        paulis : list
+            List of Pauli matrices in tensor product
+        coeff : float or complex
+            Coefficient of tensor product
+        """
+        self.paulis = paulis
+        self.coeff = coeff
+
+    def ldim(self):
+        """
+        Get log2(dimension) of Pauli tensor product.
+
+        Returns
+        -------
+        dim : int
+            log base 2 of the dimension of Pauli tensor product
+        """
+        return len(self.paulis)
     
+    def __eq__(self, other):
+        """
+        Check if Pauli tensor products are equal.
+
+        Parameters
+        ----------
+        other : Pauli
+            Pauli tensor product to compare with
+
+        Returns
+        -------
+        bool
+            True if equal, False otherwise
+        """
+        return isinstance(other, Pauli) and self.paulis == other.paulis and self.coeff == other.coeff
+    
+def paocomm(A: Pauli, B: Pauli):
+    """
+    Calculate commutator and anticommutator of Pauli tensor products.
+    
+    Parameters
+    ----------
+    A : Pauli
+        First Pauli tensor product
+    B : Pauli
+        Second Pauli tensor product
+    
+    Returns
+    -------
+    C : Pauli
+        Sum of commutator and anticommutator of A and B
+    aoc : bool
+        True if anticommutator, False if commutator
+    """
+
+
+def pcomm(A: Pauli, B: Pauli):
+    """
+    Calculate commutator of Pauli tensor products.
+
+    Parameters
+    ----------
+    A : Pauli
+        First Pauli tensor product
+    B : Pauli
+        Second Pauli tensor product
+
+    Returns
+    -------
+    C : Pauli
+        Commutator of A and B
+    """
+    C, aoc = paocomm(A, B)
+    if aoc:
+        return Pauli([np.zeros((2, 2)) for i in A.ldim()])
+    else:
+        return C
+
+def pacomm(A: Pauli, B: Pauli):
+    """
+    Calculate anticommutator of Pauli tensor products.
+
+    Parameters
+    ----------
+    A : Pauli
+        First Pauli tensor product
+    B : Pauli
+        Second Pauli tensor product
+
+    Returns
+    -------
+    C : Pauli
+        Anticommutator of A and B
+    """
+    C, aoc = paocomm(A, B)
+    if aoc:
+        return C
+    else:
+        return Pauli([np.zeros((2, 2)) for i in A.ldim()])
