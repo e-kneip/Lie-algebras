@@ -40,9 +40,7 @@ def comm(A: np.ndarray, B: np.ndarray):
     C = A @ B - B @ A
     return C
 
-comm = np.vectorize(comm)
-
-def acomm(A: np.ndarray, B: np.ndarray):
+def a_comm(A: np.ndarray, B: np.ndarray):
     """
     Calculate anticommutator of operators: [A, B] = AB+BA.
 
@@ -60,8 +58,6 @@ def acomm(A: np.ndarray, B: np.ndarray):
     """
     C = A @ B + B @ A
     return C
-
-acomm = np.vectorize(acomm)
 
 def tensor(W: np.ndarray, dim: int, start: int, end: int = 0):
     """
@@ -247,18 +243,18 @@ class Pauli:
     Class for tensor products of Pauli matrices.
     """
 
-    def __init__(self, paulis: list, coeff: float or complex or int = 1):
+    def __init__(self, decomp: list, coeff: float or complex or int = 1):
         """
         Initialise Pauli tensor product.
 
         Parameters
         ----------
-        paulis : list
+        decomp : list
             List of Pauli matrices in tensor product
         coeff : float or complex
             Coefficient of tensor product
         """
-        self.paulis = paulis
+        self.decomp = decomp
         self.coeff = coeff
 
     def ldim(self):
@@ -286,9 +282,9 @@ class Pauli:
         bool
             True if equal, False otherwise
         """
-        return isinstance(other, Pauli) and self.paulis == other.paulis and self.coeff == other.coeff
+        return isinstance(other, Pauli) and self.decomp == other.decomp and self.coeff == other.coeff
     
-def paocomm(A: Pauli, B: Pauli):
+def p_ao_comm(A: Pauli, B: Pauli):
     """
     Calculate commutator and anticommutator of Pauli tensor products.
     
@@ -306,9 +302,39 @@ def paocomm(A: Pauli, B: Pauli):
     aoc : bool
         True if anticommutator, False if commutator
     """
+    a_decomp, b_decomp = A.decomp, B.decomp
+    aoc = False
 
+    # commutator of every pair of Pauli matrices in decompositions
+    commutator = np.einsum("ijk, ikl -> ijl", a_decomp, b_decomp, optimize=True) - np.einsum("ijk, ikl -> ijl", b_decomp, a_decomp, optimize=True)
+    commutator = np.array(commutator / 2j)
 
-def pcomm(A: Pauli, B: Pauli):
+    # anti-commutator of every pair of Pauli matrices in decompositions
+    anticommutator = np.einsum("ijk, ikl -> ijl", a_decomp, b_decomp, optimize=True) + np.einsum("ijk, ikl -> ijl", b_decomp, a_decomp, optimize=True)
+    anticommutator = np.array(anticommutator / 2)
+
+    # check how many commutators are non-zero and correct sign
+    n = 0
+    sgn = 1
+    for i in range(len(commutator)):
+        ind1 = commutator[i][0][0]
+        ind2 = commutator[i][1][0]
+        if not (ind1 == 0 and ind2 == 0):
+            n += 1
+            if (ind1 + ind2).real + (ind1 + ind2).imag < 0:
+                commutator[i] = -commutator[i]
+                sgn *= -1
+
+    # odd n => imaginary coefficient => commutator or even n => real coefficient => anticommutator
+    if n%2 == 0:
+        aoc = True
+
+    decomp = list(commutator + anticommutator)
+    C = Pauli(decomp, 2 * sgn * A.coeff * B.coeff * 1j**n)
+
+    return C, aoc
+
+def p_comm(A: Pauli, B: Pauli):
     """
     Calculate commutator of Pauli tensor products.
 
@@ -324,13 +350,13 @@ def pcomm(A: Pauli, B: Pauli):
     C : Pauli
         Commutator of A and B
     """
-    C, aoc = paocomm(A, B)
+    C, aoc = p_ao_comm(A, B)
     if aoc:
         return Pauli([np.zeros((2, 2)) for i in A.ldim()])
     else:
         return C
 
-def pacomm(A: Pauli, B: Pauli):
+def p_a_comm(A: Pauli, B: Pauli):
     """
     Calculate anticommutator of Pauli tensor products.
 
@@ -346,7 +372,7 @@ def pacomm(A: Pauli, B: Pauli):
     C : Pauli
         Anticommutator of A and B
     """
-    C, aoc = paocomm(A, B)
+    C, aoc = p_ao_comm(A, B)
     if aoc:
         return C
     else:
