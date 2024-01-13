@@ -11,6 +11,8 @@ DONE:
 - create tests from examples in paper
 - create class for Pauli decomposed operators
 - code up paocomm function
+- make __str__ in Pauli class
+- check all decomps are paulis in __init__ of Pauli class
 
 TO DO:
 - make tests from paper more general for n and tidy up with modulo
@@ -22,8 +24,8 @@ TO DO:
 - create a pfind_algebra and pcomplete_algebra
 - put find_comm into package?
 - test p_ao_comm
-- make __str__ in Pauli class
-- check all decomps are paulis in __init__ of Pauli class
+- redo p_ao_comm using look up table
+- make look up table of Pauli commutations
 
 
 ##### Problems
