@@ -254,6 +254,7 @@ class Pauli:
         coeff : float or complex
             Coefficient of tensor product
         """
+        # check correct input
         if not isinstance(coeff, Number):
             raise TypeError(f"Coefficient {coeff} must be a number.")
         if not isinstance(decomp, list):
@@ -263,8 +264,23 @@ class Pauli:
                 raise TypeError(f"Decomposition must be a list of numpy arrays, but {op} is not.")
             elif not (op == I).all() and not (op == X).all() and not (op == Y).all() and not (op == Z).all():
                 raise ValueError(f"Decomposition must be a list of Pauli matrices, but {op} is not.")
+
+        # create quick storage of decomposition
+        q_decomp = np.array([])
+        for op in decomp:
+            if (op == I).all():
+                q_decomp = np.append(q_decomp, 0)
+            elif (op == X).all():
+                q_decomp = np.append(q_decomp, 1)
+            elif (op == Y).all():
+                q_decomp = np.append(q_decomp, 2)
+            else:
+                q_decomp = np.append(q_decomp, 3)
+
+        # set attributes
         self.coeff = coeff
         self.decomp = decomp
+        self.q_decomp = q_decomp
 
     def ldim(self):
         """
@@ -302,14 +318,14 @@ class Pauli:
         str
             String representation of Pauli tensor product
         """
-        decomp = self.decomp
+        q_decomp = self.q_decomp
         str_decomp = []
-        for i in range(len(decomp)):
-            if np.array_equal(decomp[i], I):
+        for i in range(self.ldim()):
+            if q_decomp[i] == 0:
                 str_decomp.append("I")
-            elif np.array_equal(decomp[i], X):
+            elif q_decomp[i] == 1:
                 str_decomp.append("X")
-            elif np.array_equal(decomp[i], Y):
+            elif q_decomp[i] == 2:
                 str_decomp.append("Y")
             else:
                 str_decomp.append("Z")
@@ -324,19 +340,22 @@ class Pauli:
         str
             String representation of Pauli tensor product
         """
-        decomp = self.decomp
+        q_decomp = self.q_decomp
         str_decomp = []
-        for i in range(len(decomp)):
-            if np.array_equal(decomp[i], I):
+        for i in range(self.ldim()):
+            if q_decomp[i] == 0:
                 str_decomp.append("I")
-            elif np.array_equal(decomp[i], X):
+            elif q_decomp[i] == 1:
                 str_decomp.append("X")
-            elif np.array_equal(decomp[i], Y):
+            elif q_decomp[i] == 2:
                 str_decomp.append("Y")
             else:
                 str_decomp.append("Z")
         return "Pauli(" + str(self.coeff) + ", " + "[" + ", ".join(str_decomp) + "]" + ")"
-    
+
+# commutator/anti-commutator lookup table
+look_up = np.array([[[2, 0], [2j, 1], [-2j, 2], [2, 1]], [[-2j, 3], [2, 0], [2j, 1], [2, 2]], [[2j, 2], [-2j, 1], [2, 0], [2, 3]], [[2, 1], [2, 2], [2, 3], [2, 0]]])
+
 def p_ao_comm(A: Pauli, B: Pauli):
     """
     Calculate commutator and anticommutator of Pauli tensor products.
