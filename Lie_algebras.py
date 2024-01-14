@@ -354,7 +354,7 @@ class Pauli:
         return "Pauli(" + str(self.coeff) + ", " + "[" + ", ".join(str_decomp) + "]" + ")"
 
 # commutator/anti-commutator lookup table
-look_up = np.array([[[2, 0], [2j, 1], [-2j, 2], [2, 1]], [[-2j, 3], [2, 0], [2j, 1], [2, 2]], [[2j, 2], [-2j, 1], [2, 0], [2, 3]], [[2, 1], [2, 2], [2, 3], [2, 0]]])
+look_up = np.array([[[1, 0], [1, 1], [1, 2], [1, 3]], [[1, 1], [1, 0], [1j, 1], [-1j, 2]], [[1, 2], [-1j, 3], [1, 0], [1j, 1]], [[1, 3], [1j, 2], [-1j, 1], [1, 0]]])
 
 def p_ao_comm(A: Pauli, B: Pauli):
     """
@@ -374,35 +374,35 @@ def p_ao_comm(A: Pauli, B: Pauli):
     aoc : bool
         True if anticommutator, False if commutator
     """
-    a_decomp, b_decomp = A.decomp, B.decomp
-    aoc = False
+    a_q_decomp, b_q_decomp = A.q_decomp, B.q_decomp
+    aoc = True
+    c_q_decomp = np.array([0.0 + 0.0j for i in range(A.ldim())])
+    coeff = 1
 
-    # commutator of every pair of Pauli matrices in decompositions
-    commutator = np.einsum("ijk, ikl -> ijl", a_decomp, b_decomp, optimize=True) - np.einsum("ijk, ikl -> ijl", b_decomp, a_decomp, optimize=True)
-    commutator = np.array(commutator / 2j)
+    # use lookup to commutate/anticommutate
+    for i in range(4):
+        for j in range(4):
+            ind = np.where(np.array(a_q_decomp == i) & np.array(b_q_decomp == j) == True)[0]
+            for k in ind:
+                c_q_decomp[k] = look_up[i, j, 1]
+                coeff *= look_up[i, j, 0]
 
-    # anti-commutator of every pair of Pauli matrices in decompositions
-    anticommutator = np.einsum("ijk, ikl -> ijl", a_decomp, b_decomp, optimize=True) + np.einsum("ijk, ikl -> ijl", b_decomp, a_decomp, optimize=True)
-    anticommutator = np.array(anticommutator / 2)
+    decomp = []
+    for op in c_q_decomp:
+        if op == 0:
+            decomp.append(I)
+        elif op == 1:
+            decomp.append(X)
+        elif op == 2:
+            decomp.append(Y)
+        else:
+            decomp.append(Z)
 
-    # check how many commutators are non-zero and correct sign
-    n = 0
-    sgn = 1
-    for i in range(len(commutator)):
-        ind1 = commutator[i][0][0]
-        ind2 = commutator[i][1][0]
-        if not (ind1 == 0 and ind2 == 0):
-            n += 1
-            if (ind1 + ind2).real + (ind1 + ind2).imag < 0:
-                commutator[i] = -commutator[i]
-                sgn *= -1
+    # coeff imaginary => commutator
+    if coeff.imag != 0:
+        aoc = False
 
-    # odd n => imaginary coefficient => commutator or even n => real coefficient => anticommutator
-    if n%2 == 0:
-        aoc = True
-
-    decomp = list(commutator + anticommutator)
-    C = Pauli(decomp, 2 * sgn * A.coeff * B.coeff * 1j**n)
+    C = Pauli(2 * coeff * A.coeff * B.coeff, decomp)
 
     return C, aoc
 
@@ -424,7 +424,7 @@ def p_comm(A: Pauli, B: Pauli):
     """
     C, aoc = p_ao_comm(A, B)
     if aoc:
-        return Pauli([np.zeros((2, 2)) for i in A.ldim()])
+        return Pauli(0, [I for i in range(A.ldim())])
     else:
         return C
 
@@ -448,4 +448,4 @@ def p_a_comm(A: Pauli, B: Pauli):
     if aoc:
         return C
     else:
-        return Pauli([np.zeros((2, 2)) for i in A.ldim()])
+        return Pauli(0, [I for i in range(A.ldim())])
