@@ -241,7 +241,7 @@ def decompose(M):
 class Pauli:
     """Class for tensor products of Pauli matrices."""
 
-    def __init__(self, coeff: Number = 1, decomp: list = []):
+    def __init__(self, decomp: list = []):
         """
         Initialise Pauli tensor product.
 
@@ -249,14 +249,10 @@ class Pauli:
         ----------
         decomp : list
             List of Pauli matrices in tensor product
-        coeff : float or complex
-            Coefficient of tensor product
         """
         # check correct input
-        if not isinstance(coeff, Number):
-            raise TypeError(f"Coefficient {coeff} must be a number.")
         if not isinstance(decomp, list):
-            raise TypeError(f"Decomposition {decomp} must be a list.")
+            raise TypeError(f"Decomposition must be a list, but {decomp} is not.")
         for op in decomp:
             if not isinstance(op, np.ndarray):
                 raise TypeError(f"Decomposition must be a list of numpy arrays, but {op} is not.")
@@ -276,18 +272,17 @@ class Pauli:
                 q_decomp = np.append(q_decomp, 3)
 
         # set attributes
-        self.coeff = coeff
         self.decomp = decomp
         self.q_decomp = q_decomp
 
-    def ldim(self):
+    def __len__(self):
         """
-        Get log2(dimension) of Pauli tensor product.
+        Get number of Paulis in tensor product, or log2(dimension) of Pauli tensor product.
 
         Returns
         -------
         dim : int
-            log base 2 of the dimension of Pauli tensor product
+            Number of Paulis in tensor product
         """
         return len(self.decomp)
 
@@ -305,7 +300,7 @@ class Pauli:
         bool
             True if equal, False otherwise
         """
-        return isinstance(other, Pauli) and np.array_equal(self.decomp, other.decomp) and self.coeff == other.coeff
+        return isinstance(other, Pauli) and np.array_equal(self.q_decomp, other.q_decomp)
 
     def __str__(self):
         """
@@ -318,7 +313,7 @@ class Pauli:
         """
         q_decomp = self.q_decomp
         str_decomp = []
-        for i in range(self.ldim()):
+        for i in range(len(self)):
             if q_decomp[i] == 0:
                 str_decomp.append("I")
             elif q_decomp[i] == 1:
@@ -327,7 +322,7 @@ class Pauli:
                 str_decomp.append("Y")
             else:
                 str_decomp.append("Z")
-        return f"{self.coeff} * {' x '.join(str_decomp)}"
+        return ' x '.join(str_decomp)
 
     def __repr__(self):
         """
@@ -340,7 +335,7 @@ class Pauli:
         """
         q_decomp = self.q_decomp
         str_decomp = []
-        for i in range(self.ldim()):
+        for i in range(len(self)):
             if q_decomp[i] == 0:
                 str_decomp.append("I")
             elif q_decomp[i] == 1:
@@ -349,7 +344,7 @@ class Pauli:
                 str_decomp.append("Y")
             else:
                 str_decomp.append("Z")
-        return "Pauli(" + str(self.coeff) + ", " + "[" + ", ".join(str_decomp) + "]" + ")"
+        return "Pauli([" + ", ".join(str_decomp) + "])"
 
 class SuperPauli:
     """Class for superposition of Pauli tensor products."""
@@ -363,6 +358,8 @@ class SuperPauli:
         paulis : list
             List of tuples (coefficient, Pauli) for each Pauli tensor product in superposition
         """
+        coeff_list = []
+        pauli_list = []
         # check correct input
         if not isinstance(paulis, list):
             raise TypeError(f"Decomposition {paulis} must be a list.")
@@ -374,9 +371,13 @@ class SuperPauli:
                 raise TypeError(f"Coefficient {i} must be a number.")
             if not isinstance(j, Pauli):
                 raise TypeError(f"Pauli {j} must be a Pauli tensor product.")
+            coeff_list.append(i)
+            pauli_list.append(j)
 
         # set attributes
         self.paulis = paulis
+        self.coeff_list = coeff_list
+        self.pauli_list = pauli_list
 
     def __len__(self):
         """
@@ -399,10 +400,7 @@ class SuperPauli:
             String representation of Pauli tensor product
         """
         paulis = self.paulis
-        coeff_list, pauli_list = [], []
-        for i, j in paulis:
-            coeff_list.append(i)
-            pauli_list.append(j)
+        coeff_list, pauli_list = self.coeff_list, self.pauli_list
         return f" + ".join([f"{coeff_list[i]} * {pauli_list[i]}" for i in range(len(paulis))])
     
     def __repr__(self):
@@ -415,18 +413,15 @@ class SuperPauli:
             String representation of Pauli tensor product
         """
         paulis = self.paulis
-        coeff_list, pauli_list = [], []
-        for i, j in paulis:
-            coeff_list.append(i)
-            pauli_list.append(j)
-        return "SuperPauli(" + "[" + ", ".join([f"({coeff_list[i]}, {pauli_list[i].__repr__()})" for i in range(len(paulis))]) + "]" + ")"
+        coeff_list, pauli_list = self.coeff_list, self.pauli_list
+        return "SuperPauli([" + ", ".join([f"({coeff_list[i]}, {pauli_list[i].__repr__()})" for i in range(len(paulis))]) + "])"
 
 # commutator/anti-commutator lookup table
 look_up = np.array([[[1, 0], [1, 1], [1, 2], [1, 3]], [[1, 1], [1, 0], [1j, 1], [-1j, 2]], [[1, 2], [-1j, 3], [1, 0], [1j, 1]], [[1, 3], [1j, 2], [-1j, 1], [1, 0]]])
 
 def p_ao_comm(A: Pauli, B: Pauli):
     """
-    Calculate commutator and anticommutator of Pauli tensor products.
+    Calculate commutator and anticommutator of single Pauli tensor products.
     
     Parameters
     ----------
@@ -437,14 +432,14 @@ def p_ao_comm(A: Pauli, B: Pauli):
     
     Returns
     -------
-    C : Pauli
-        Sum of commutator and anticommutator of A and B
+    C : SuperPauli
+        Commutator or anticommutator of A and B, based on aoc
     aoc : bool
         True if anticommutator, False if commutator
     """
     a_q_decomp, b_q_decomp = A.q_decomp, B.q_decomp
     aoc = True
-    c_q_decomp = np.array([0.0 + 0.0j for i in range(A.ldim())])
+    c_q_decomp = np.array([0.0 + 0.0j for i in range(len(A))])
     coeff = 1
 
     # use lookup to commutate/anticommutate
@@ -492,7 +487,7 @@ def p_comm(A: Pauli, B: Pauli):
     """
     C, aoc = p_ao_comm(A, B)
     if aoc:
-        return Pauli(0, [I for i in range(A.ldim())])
+        return Pauli(0, [I for i in range(len(A))])
     else:
         return C
 
@@ -516,4 +511,4 @@ def p_a_comm(A: Pauli, B: Pauli):
     if aoc:
         return C
     else:
-        return Pauli(0, [I for i in range(A.ldim())])
+        return Pauli(0, [I for i in range(len(A))])
