@@ -22,7 +22,7 @@ class LieAlgebraError(Exception):
     pass
 
 
-def comm(A: np.ndarray, B: np.ndarray):
+def commutator(A: np.ndarray, B: np.ndarray):
     """
     Calculate commutator of operators: [A, B] = AB-BA.
 
@@ -41,7 +41,7 @@ def comm(A: np.ndarray, B: np.ndarray):
     C = A @ B - B @ A
     return C
 
-def a_comm(A: np.ndarray, B: np.ndarray):
+def anticommutator(A: np.ndarray, B: np.ndarray):
     """
     Calculate anticommutator of operators: [A, B] = AB+BA.
 
@@ -122,7 +122,7 @@ def complete_algebra_inner(Ops: list, start: int):
     new_Ops = Ops.copy()
     for i in range(len(Ops)):
         for j in range(max(i, start), len(Ops)):
-            new_op = comm(new_Ops[i], new_Ops[j])
+            new_op = commutator(new_Ops[i], new_Ops[j])
             new_Ops.append(new_op)
             if not lin_ind(new_Ops):
                 new_Ops.pop()
@@ -197,7 +197,7 @@ def find_algebra(Op_0: list, Op_1: list, max: int):
     # append every commutation that is linearly independent
     for i in range(len(Op_0)):
         for j in range(len(Op_1)):
-            new_op = comm(Op_0[i], Op_1[j])
+            new_op = commutator(Op_0[i], Op_1[j])
             Ops.append(new_op)
             if not lin_ind(Ops):
                 Ops.pop()
@@ -419,9 +419,9 @@ class SuperPauli:
 # commutator/anti-commutator lookup table
 look_up = np.array([[[1, 0], [1, 1], [1, 2], [1, 3]], [[1, 1], [1, 0], [1j, 1], [-1j, 2]], [[1, 2], [-1j, 3], [1, 0], [1j, 1]], [[1, 3], [1j, 2], [-1j, 1], [1, 0]]])
 
-def p_ao_comm(A: Pauli, B: Pauli):
+def acomm_comm(A: Pauli, B: Pauli):
     """
-    Calculate commutator and anticommutator of single Pauli tensor products.
+    Calculate commutator and anticommutator of Pauli tensor products.
     
     Parameters
     ----------
@@ -465,50 +465,88 @@ def p_ao_comm(A: Pauli, B: Pauli):
     if coeff.imag != 0:
         aoc = False
 
-    C = Pauli(2 * coeff * A.coeff * B.coeff, decomp)
+    C = SuperPauli([(2 * coeff, Pauli(decomp))])
 
     return C, aoc
 
-def p_comm(A: Pauli, B: Pauli):
+def comm(A: Pauli or SuperPauli, B: Pauli or SuperPauli):
     """
     Calculate commutator of Pauli tensor products.
 
     Parameters
     ----------
-    A : Pauli
-        First Pauli tensor product
-    B : Pauli
-        Second Pauli tensor product
+    A : Pauli or SuperPauli
+        First superposition of Pauli tensor products
+    B : Pauli or SuperPauli
+        Second superposition of Pauli tensor products
 
     Returns
     -------
-    C : Pauli
+    C : SuperPauli
         Commutator of A and B
     """
-    C, aoc = p_ao_comm(A, B)
-    if aoc:
-        return Pauli(0, [I for i in range(len(A))])
-    else:
-        return C
+    if isinstance(A, Pauli):
+        A = SuperPauli([(1, A)])
+    if isinstance(B, Pauli):
+        B = SuperPauli([(1, B)])
 
-def p_a_comm(A: Pauli, B: Pauli):
+    a_pauli_list, b_pauli_list = A.pauli_list, B.pauli_list
+    a_coeff_list, b_coeff_list = A.coeff_list, B.coeff_list
+    basis = []
+    coeffs = []
+
+    # calculate commutator of each pair of Pauli tensor products
+    for i in range(len(A)):
+        for j in range(len(B)):
+            C, aoc = acomm_comm(a_pauli_list[i], b_pauli_list[j])
+            if not aoc:
+                if C.pauli_list[0] in basis:
+                    coeffs[basis.index(C.pauli_list[0])] += a_coeff_list[i] * b_coeff_list[j] * C.coeff_list[0]
+                else:
+                    basis.append(C.pauli_list[0])
+                    coeffs.append(a_coeff_list[i] * b_coeff_list[j] * C.coeff_list[0])
+
+    paulis = zip(coeffs, basis)
+
+    return SuperPauli(list(paulis))
+
+def acomm(A: Pauli or SuperPauli, B: Pauli or SuperPauli):
     """
     Calculate anticommutator of Pauli tensor products.
 
     Parameters
     ----------
-    A : Pauli
-        First Pauli tensor product
-    B : Pauli
-        Second Pauli tensor product
+    A : Pauli or SuperPauli
+        First superposition of Pauli tensor products
+    B : Pauli or SuperPauli
+        Second superposition of Pauli tensor products
 
     Returns
     -------
-    C : Pauli
+    C : SuperPauli
         Anticommutator of A and B
     """
-    C, aoc = p_ao_comm(A, B)
-    if aoc:
-        return C
-    else:
-        return Pauli(0, [I for i in range(len(A))])
+    if isinstance(A, Pauli):
+        A = SuperPauli([(1, A)])
+    if isinstance(B, Pauli):
+        B = SuperPauli([(1, B)])
+
+    a_pauli_list, b_pauli_list = A.pauli_list, B.pauli_list
+    a_coeff_list, b_coeff_list = A.coeff_list, B.coeff_list
+    basis = []
+    coeffs = []
+
+    # calculate commutator of each pair of Pauli tensor products
+    for i in range(len(A)):
+        for j in range(len(B)):
+            C, aoc = acomm_comm(a_pauli_list[i], b_pauli_list[j])
+            if aoc:
+                if C.pauli_list[0] in basis:
+                    coeffs[basis.index(C.pauli_list[0])] += a_coeff_list[i] * b_coeff_list[j] * C.coeff_list[0]
+                else:
+                    basis.append(C.pauli_list[0])
+                    coeffs.append(a_coeff_list[i] * b_coeff_list[j] * C.coeff_list[0])
+
+    paulis = zip(coeffs, basis)
+
+    return SuperPauli(list(paulis))
