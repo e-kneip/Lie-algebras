@@ -13,6 +13,9 @@ DONE:
 - code up paocomm function
 - make __str__ in Pauli class
 - check all decomps are paulis in __init__ of Pauli class
+- test acomm_comm
+- redo acomm_comm using look up table
+- make look up table of Pauli commutations
 
 TO DO:
 - make tests from paper more general for n and tidy up with modulo
@@ -23,9 +26,7 @@ TO DO:
 - check out if functions in mathematica useful to convert
 - create a pfind_algebra and pcomplete_algebra
 - put find_comm into package?
-- test p_ao_comm
-- redo p_ao_comm using look up table
-- make look up table of Pauli commutations
+- multiplying superpaulis? w new lookup table?
 
 
 ##### Problems
@@ -36,3 +37,8 @@ FIXED:
 
 NOT FIXED:
 - cannot determine how an operator is linearly dependent on operators in algebra (use qr decomp: cols of r give dependencies)
+
+
+##### Ideas
+
+- could you find commutator/anticommutator of higher n by tensor producting the lookup table? ie make lookup table for higher n and compare...
