@@ -346,6 +346,83 @@ class Pauli:
                 str_decomp.append("Z")
         return "Pauli([" + ", ".join(str_decomp) + "])"
 
+    def __add__(self, other):
+        """
+        Add Pauli tensor products.
+
+        Parameters
+        ----------
+        other : Pauli
+            Pauli tensor product to add
+
+        Returns
+        -------
+        SuperPauli
+            Sum of Pauli tensor products
+        """
+        if isinstance(other, Pauli):
+            if self == other:
+                return SuperPauli([(2, self)])
+            else:
+                return SuperPauli([(1, self), (1, other)])
+        if isinstance(other, SuperPauli):
+            return other.__add__(self)
+        else:
+            raise TypeError("Cannot add Pauli to " + type(other).__name__ + ".")
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        """
+        Subtract Pauli tensor products.
+
+        Parameters
+        ----------
+        other : Pauli
+            Pauli tensor product to subtract
+
+        Returns
+        -------
+        SuperPauli
+            Difference of Pauli tensor products
+        """
+        if isinstance(other, Pauli):
+            if self == other:
+                return SuperPauli([])
+            else:
+                return SuperPauli([(1, self), (-1, other)])
+        else:
+            raise TypeError("Cannot subtract " + type(other).__name__ + " from Pauli.")
+
+    def __rsub__(self, other):
+        return -self.__sub__(other)
+
+    def __mul__(self, other):
+        """
+        Multiply Pauli tensor product by scalar.
+
+        Parameters
+        ----------
+        other : Number
+            Scalar to multiply by
+
+        Returns
+        -------
+        SuperPauli :
+            Multiplication of Pauli tensor product by scalar
+        """
+        if isinstance(other, Number):
+            return SuperPauli([(other, self)])
+        else:
+            raise TypeError("Cannot multiply Pauli by " + type(other).__name__ + ".")
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __neg__(self):
+        return SuperPauli([(-1, self)])
+
 class SuperPauli:
     """Class for superposition of Pauli tensor products."""
 
@@ -415,6 +492,97 @@ class SuperPauli:
         paulis = self.paulis
         coeff_list, pauli_list = self.coeff_list, self.pauli_list
         return "SuperPauli([" + ", ".join([f"({coeff_list[i]}, {pauli_list[i].__repr__()})" for i in range(len(paulis))]) + "])"
+
+    def __add__(self, other):
+        """
+        Add Pauli tensor product superpositions.
+
+        Parameters
+        ----------
+        other : SuperPauli
+            Pauli tensor product superposition to add
+
+        Returns
+        -------
+        SuperPauli
+            Sum of Pauli tensor product superpositions
+        """
+        if isinstance(other, Pauli):
+            other = SuperPauli([(1, other)])
+        if isinstance(other, SuperPauli):
+            self_pauli_list, self_coeff_list = self.pauli_list, self.coeff_list
+            other_pauli_list, other_coeff_list = other.pauli_list, other.coeff_list
+            new_pauli_list, new_coeff_list = self_pauli_list.copy(), self_coeff_list.copy()
+            for i in range(len(other)):
+                if other_pauli_list[i] in self_pauli_list:
+                    new_coeff_list[self_pauli_list.index(other_pauli_list[i])] += other_coeff_list[i]
+                else:
+                    new_pauli_list.append(other_pauli_list[i])
+                    new_coeff_list.append(other_coeff_list[i])
+            return SuperPauli(list(zip(new_coeff_list, new_pauli_list)))
+        else:
+            raise TypeError("Cannot add SuperPauli to " + type(other).__name__ + ".")
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        """
+        Subtract Pauli tensor product superpositions.
+
+        Parameters
+        ----------
+        other : SuperPauli
+            Pauli tensor product superposition to subtract
+
+        Returns
+        -------
+        SuperPauli
+            Difference of Pauli tensor product superpositions
+        """
+        if isinstance(other, Pauli):
+            other = SuperPauli([(1, other)])
+        if isinstance(other, SuperPauli):
+            self_pauli_list, self_coeff_list = self.pauli_list, self.coeff_list
+            other_pauli_list, other_coeff_list = other.pauli_list, other.coeff_list
+            new_pauli_list, new_coeff_list = self_pauli_list.copy(), self_coeff_list.copy()
+            for i in range(len(other)):
+                if other_pauli_list[i] in self_pauli_list:
+                    new_coeff_list[self_pauli_list.index(other_pauli_list[i])] -= other_coeff_list[i]
+                else:
+                    new_pauli_list.append(other_pauli_list[i])
+                    new_coeff_list.append(-other_coeff_list[i])
+            return SuperPauli(list(zip(new_coeff_list, new_pauli_list)))
+        else:
+            raise TypeError("Cannot subtract " + type(other).__name__ + " from SuperPauli.")
+
+    def __rsub__(self, other):
+        return -self.__sub__(other)
+
+    def __mul__(self, other):
+        """
+        Multiply Pauli tensor product superposition by scalar.
+
+        Parameters
+        ----------
+        other : Number
+            Scalar to multiply by
+
+        Returns
+        -------
+        SuperPauli
+            Multiplication of Pauli tensor product superposition by scalar
+        """
+        if isinstance(other, Number):
+            return SuperPauli([(other * self.coeff_list[i], self.pauli_list[i]) for i in range(len(self))])
+        else:
+            raise TypeError("Cannot multiply SuperPauli by " + type(other).__name__ + ".")
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __neg__(self):
+        return -1 * self
 
 # commutator/anti-commutator lookup table
 look_up = np.array([[[1, 0], [1, 1], [1, 2], [1, 3]], [[1, 1], [1, 0], [1j, 1], [-1j, 2]], [[1, 2], [-1j, 3], [1, 0], [1j, 1]], [[1, 3], [1j, 2], [-1j, 1], [1, 0]]])
