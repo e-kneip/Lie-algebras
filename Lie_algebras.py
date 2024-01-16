@@ -239,9 +239,7 @@ def decompose(M):
 
 # keeping everything in Pauli decomposition from here on...
 class Pauli:
-    """
-    Class for tensor products of Pauli matrices.
-    """
+    """Class for tensor products of Pauli matrices."""
 
     def __init__(self, coeff: Number = 1, decomp: list = []):
         """
@@ -292,7 +290,7 @@ class Pauli:
             log base 2 of the dimension of Pauli tensor product
         """
         return len(self.decomp)
-    
+
     def __eq__(self, other):
         """
         Check if Pauli tensor products are equal.
@@ -308,7 +306,7 @@ class Pauli:
             True if equal, False otherwise
         """
         return isinstance(other, Pauli) and np.array_equal(self.decomp, other.decomp) and self.coeff == other.coeff
-    
+
     def __str__(self):
         """
         Print Pauli tensor product.
@@ -330,7 +328,7 @@ class Pauli:
             else:
                 str_decomp.append("Z")
         return f"{self.coeff} * {' x '.join(str_decomp)}"
-    
+
     def __repr__(self):
         """
         Print Pauli tensor product representation.
@@ -352,6 +350,76 @@ class Pauli:
             else:
                 str_decomp.append("Z")
         return "Pauli(" + str(self.coeff) + ", " + "[" + ", ".join(str_decomp) + "]" + ")"
+
+class SuperPauli:
+    """Class for superposition of Pauli tensor products."""
+
+    def __init__(self, paulis: list = []):
+        """
+        Initialise Pauli tensor product superposition.
+
+        Parameters
+        ----------
+        paulis : list
+            List of tuples (coefficient, Pauli) for each Pauli tensor product in superposition
+        """
+        # check correct input
+        if not isinstance(paulis, list):
+            raise TypeError(f"Decomposition {paulis} must be a list.")
+        for op in paulis:
+            if not isinstance(op, tuple) or not len(op) == 2:
+                raise TypeError(f"Decomposition must be a list of length 2 tuples, but {op} is not.")
+            i, j = op
+            if not isinstance(i, Number):
+                raise TypeError(f"Coefficient {i} must be a number.")
+            if not isinstance(j, Pauli):
+                raise TypeError(f"Pauli {j} must be a Pauli tensor product.")
+
+        # set attributes
+        self.paulis = paulis
+
+    def __len__(self):
+        """
+        Get number of Pauli tensor products in superposition.
+
+        Returns
+        -------
+        int
+            Number of Pauli tensor products in superposition
+        """
+        return len(self.paulis)
+
+    def __str__(self):
+        """
+        Print Pauli tensor product.
+
+        Returns
+        -------
+        str
+            String representation of Pauli tensor product
+        """
+        paulis = self.paulis
+        coeff_list, pauli_list = [], []
+        for i, j in paulis:
+            coeff_list.append(i)
+            pauli_list.append(j)
+        return f" + ".join([f"{coeff_list[i]} * {pauli_list[i]}" for i in range(len(paulis))])
+    
+    def __repr__(self):
+        """
+        Print Pauli tensor product representation.
+
+        Returns
+        -------
+        str
+            String representation of Pauli tensor product
+        """
+        paulis = self.paulis
+        coeff_list, pauli_list = [], []
+        for i, j in paulis:
+            coeff_list.append(i)
+            pauli_list.append(j)
+        return "SuperPauli(" + "[" + ", ".join([f"({coeff_list[i]}, {pauli_list[i].__repr__()})" for i in range(len(paulis))]) + "]" + ")"
 
 # commutator/anti-commutator lookup table
 look_up = np.array([[[1, 0], [1, 1], [1, 2], [1, 3]], [[1, 1], [1, 0], [1j, 1], [-1j, 2]], [[1, 2], [-1j, 3], [1, 0], [1j, 1]], [[1, 3], [1j, 2], [-1j, 1], [1, 0]]])
