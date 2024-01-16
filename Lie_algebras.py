@@ -95,7 +95,7 @@ def tensor(W: np.ndarray, dim: int, start: int, end: int = 0):
     return T
 
 
-def lin_ind(Ops: list):
+def linear_independence(Ops: list):
     """
     Determines whether a list of operators are linearly independent.
 
@@ -124,7 +124,7 @@ def complete_algebra_inner(Ops: list, start: int):
         for j in range(max(i, start), len(Ops)):
             new_op = commutator(new_Ops[i], new_Ops[j])
             new_Ops.append(new_op)
-            if not lin_ind(new_Ops):
+            if not linear_independence(new_Ops):
                 new_Ops.pop()
     return new_Ops
 
@@ -147,7 +147,7 @@ def complete_algebra(Ops: list, max: int, start: int = 0):
     new_Ops : list
         List of operators in completed Lie algebra
     """
-    if not lin_ind(Ops):
+    if not linear_independence(Ops):
         raise LinearIndependenceError(
             "Given operators are not linearly independent."
         )
@@ -718,3 +718,40 @@ def acomm(A: Pauli or SuperPauli, B: Pauli or SuperPauli):
     paulis = zip(coeffs, basis)
 
     return SuperPauli(list(paulis))
+
+def lin_ind(paulis: list):
+    """
+    Determines whether a list of SuperPauli tensor products are linearly independent.
+
+    Parameters
+    ----------
+    paulis : list
+        List of SuperPauli tensor products
+
+    Returns
+    -------
+    ind : bool
+        List of Pauli tensor products are linearly independent, true or false
+    """
+    basis = []
+    for pauli in paulis:
+        if isinstance(pauli, Pauli):
+            paulis[paulis.index(pauli)] = SuperPauli([(1, pauli)])
+            pauli = SuperPauli([(1, pauli)])
+        for op in pauli.pauli_list:
+            if op not in basis:
+                basis.append(op)
+
+    vectors = []
+    for pauli in paulis:
+        vector = []
+        for op in basis:
+            if op in pauli.pauli_list:
+                vector.append(pauli.coeff_list[pauli.pauli_list.index(op)])
+            else:
+                vector.append(0)
+        vectors.append(vector)
+
+    rank = np.linalg.matrix_rank(np.array(vectors))
+    ind = rank == len(paulis)
+    return ind
