@@ -199,7 +199,7 @@ def find_algebra(Op_0: list, Op_1: list, max: int):
         for j in range(len(Op_1)):
             new_op = commutator(Op_0[i], Op_1[j])
             Ops.append(new_op)
-            if not lin_ind(Ops):
+            if not linear_independence(Ops):
                 Ops.pop()
     # complete the algebra
     Lie_alg = complete_algebra(Ops, max)
@@ -755,3 +755,117 @@ def lin_ind(paulis: list):
     rank = np.linalg.matrix_rank(np.array(vectors))
     ind = rank == len(paulis)
     return ind
+
+def pauli_complete_algebra_inner(Ops: list, start: int):
+    """
+    Find all linearly independent operators from commutations of operators in Ops[0:len(Ops)] with operators in Ops[start:len(Ops)], using Pauli decompositions.
+    """
+    new_Ops = Ops.copy()
+    for i in range(len(Ops)):
+        for j in range(max(i, start), len(Ops)):
+            new_op = comm(new_Ops[i], new_Ops[j])
+            new_Ops.append(new_op)
+            if not lin_ind(new_Ops):
+                new_Ops.pop()
+            else:
+                print(f"[{i}, {j}] = {new_op}")
+    return new_Ops
+
+
+def pauli_complete_algebra(Ops: list, max: int, start: int = 0):
+    """
+    Find closed Lie algebra given initial set of operators, using Pauli decompositions.
+
+    Parameters
+    ----------
+    Ops : list
+        List of initial operators in Lie algebra
+    max : int
+        Cut off after max number of operators in Lie algebra found
+    start : int
+        Operator index to start verifying closedness, ie every commutation with operators before start already accounted
+
+    Returns
+    -------
+    new_Ops : list
+        List of operators in completed Lie algebra
+    """
+    if not lin_ind(Ops):
+        raise LinearIndependenceError(
+            "Given operators are not linearly independent."
+        )
+    if not isinstance(Ops, list):
+        raise TypeError(f"Ops must be a list, but {Ops} is not.")
+    for op in Ops:
+        if not isinstance(op, Pauli and SuperPauli):
+            raise TypeError(f"Ops must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
+        if isinstance(op, Pauli):
+            Ops[Ops.index(op)] = SuperPauli([(1, op)])
+
+    old_Ops = Ops.copy()
+
+    while True:
+        # find new set of linearly independent operators to extend old_Ops
+        new_Ops = pauli_complete_algebra_inner(old_Ops, start)
+
+        # number of new operators added
+        added_ops = len(new_Ops) - len(old_Ops)
+
+        # if no new operators found, algebra is complete
+        if added_ops == 0:
+            return new_Ops
+        else:
+            start = len(old_Ops)
+            old_Ops = new_Ops
+
+        # stop if maximum operators in algebra reached
+        if len(old_Ops) > max:
+            raise MaxOperatorsError(
+                f"Maximum of {max} operators in uncomplete algebra reached."
+            )
+
+
+def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
+    """
+    Extend operators Op_0 to include commutations with operators in Op_1.
+
+    Parameters
+    ----------
+    Op_0 : list
+        List of operators to extend (defines invariants)
+    Op_1 : list
+        List of operators to extend Op_0 with commutations of (defines H)
+    max : int
+        Cut off after max number of operators in Lie algebra found
+
+    Returns
+    -------
+    Lie_alg : list
+        List of operators in extended Lie algebra
+    """
+    if not isinstance(Op_0, list):
+        raise TypeError(f"Op_0 must be a list, but {Op_0} is not.")
+    for op in Op_0:
+        if not isinstance(op, Pauli and SuperPauli):
+            raise TypeError(f"Op_0 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
+        if isinstance(op, Pauli):
+            Op_0[Op_0.index(op)] = SuperPauli([(1, op)])
+    if not isinstance(Op_1, list):
+        raise TypeError(f"Op_1 must be a list, but {Op_1} is not.")
+    for op in Op_1:
+        if not isinstance(op, Pauli or SuperPauli):
+            raise TypeError(f"Op_1 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
+        if isinstance(op, Pauli):
+            Op_1[Op_1.index(op)] = SuperPauli([(1, op)])
+
+    Ops = Op_0.copy()
+    # append every commutation that is linearly independent
+    for i in range(len(Op_0)):
+        for j in range(len(Op_1)):
+            new_op = comm(Op_0[i], Op_1[j])
+            Ops.append(new_op)
+            if not lin_ind(Ops):
+                Ops.pop()
+    # complete the algebra
+    Lie_alg = pauli_complete_algebra(Ops, max)
+    return Lie_alg
