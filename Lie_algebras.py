@@ -585,7 +585,7 @@ class SuperPauli:
         return -1 * self
 
 # commutator/anti-commutator lookup table
-look_up = np.array([[[1, 0], [1, 1], [1, 2], [1, 3]], [[1, 1], [1, 0], [1j, 1], [-1j, 2]], [[1, 2], [-1j, 3], [1, 0], [1j, 1]], [[1, 3], [1j, 2], [-1j, 1], [1, 0]]])
+look_up = np.array([[[1, 0], [1, 1], [1, 2], [1, 3]], [[1, 1], [1, 0], [1j, 3], [-1j, 2]], [[1, 2], [-1j, 3], [1, 0], [1j, 1]], [[1, 3], [1j, 2], [-1j, 1], [1, 0]]])
 
 def acomm_comm(A: Pauli, B: Pauli):
     """
@@ -767,8 +767,6 @@ def pauli_complete_algebra_inner(Ops: list, start: int):
             new_Ops.append(new_op)
             if not lin_ind(new_Ops):
                 new_Ops.pop()
-            else:
-                print(f"[{i}, {j}] = {new_op}")
     return new_Ops
 
 
