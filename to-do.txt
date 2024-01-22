@@ -16,17 +16,15 @@ DONE:
 - test acomm_comm
 - redo acomm_comm using look up table
 - make look up table of Pauli commutations
+- create a pfind_algebra and pcomplete_algebra
 
 TO DO:
-- make tests from paper more general for n and tidy up with modulo
-- function to check linear independence via QR decomp
-- function returning linear decomposition of an operator into Lie algebra operators
-- function reducing list of operators to minimal set of linearly independent operators
-- given A_n find B st [A_n, B] = 0 for all n (code up slow way finding overlap of n=1 case? works for n=2)
 - check out if functions in mathematica useful to convert
-- create a pfind_algebra and pcomplete_algebra
-- put find_comm into package?
+- put find_comm into package? or in demo?
 - multiplying superpaulis? w new lookup table?
+- decompose big matrix into tensor product in superpauli instance
+- experiment with completing algebras from paper (+speed??) (as a demo it works)
+- Pauli class demo?
 
 
 ##### Problems
@@ -42,3 +40,6 @@ NOT FIXED:
 ##### Ideas
 
 - could you find commutator/anticommutator of higher n by tensor producting the lookup table? ie make lookup table for higher n and compare...
+- given A_n find B st [A_n, B] = 0 for all n (code up slow way finding overlap of n=1 case? works for n=2)
+- function reducing list of operators to minimal set of linearly independent operators
+- function to check linear independence via QR decomp
