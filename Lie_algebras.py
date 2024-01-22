@@ -787,17 +787,17 @@ def pauli_complete_algebra(Ops: list, max: int, start: int = 0):
     new_Ops : list
         List of operators in completed Lie algebra
     """
+    if not isinstance(Ops, list):
+        raise TypeError(f"Ops must be a list, but {Ops} is not.")
+    for op in Ops:
+        if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
+            raise TypeError(f"Ops must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
+        if isinstance(op, Pauli):
+            Ops[Ops.index(op)] = SuperPauli([(1, op)])
     if not lin_ind(Ops):
         raise LinearIndependenceError(
             "Given operators are not linearly independent."
         )
-    if not isinstance(Ops, list):
-        raise TypeError(f"Ops must be a list, but {Ops} is not.")
-    for op in Ops:
-        if not isinstance(op, Pauli and SuperPauli):
-            raise TypeError(f"Ops must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
-        if isinstance(op, Pauli):
-            Ops[Ops.index(op)] = SuperPauli([(1, op)])
 
     old_Ops = Ops.copy()
 
@@ -843,14 +843,14 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
     if not isinstance(Op_0, list):
         raise TypeError(f"Op_0 must be a list, but {Op_0} is not.")
     for op in Op_0:
-        if not isinstance(op, Pauli and SuperPauli):
+        if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
             raise TypeError(f"Op_0 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
         if isinstance(op, Pauli):
             Op_0[Op_0.index(op)] = SuperPauli([(1, op)])
     if not isinstance(Op_1, list):
         raise TypeError(f"Op_1 must be a list, but {Op_1} is not.")
     for op in Op_1:
-        if not isinstance(op, Pauli and SuperPauli):
+        if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
             raise TypeError(f"Op_1 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
         if isinstance(op, Pauli):
             Op_1[Op_1.index(op)] = SuperPauli([(1, op)])
@@ -867,7 +867,7 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
     Lie_alg = pauli_complete_algebra(Ops, max)
     return Lie_alg
 
-def tensor(Op: SuperPauli or Pauli, dim: int, loc: list):
+def tensor(Op: Pauli, dim: int, loc: list):
     """
     Calculate tensor product of Op acting on qubits in position loc and trivially elsewhere.
     
@@ -882,9 +882,38 @@ def tensor(Op: SuperPauli or Pauli, dim: int, loc: list):
 
     Returns
     -------
-    prod : SuperPauli
+    Pauli
         Tensor product acting with Op on qubits in loc and trivially elsewhere
     """
+    if not (Op == I).all() and not (Op == X).all() and not (Op == Y).all() and not (Op == Z).all():
+        raise ValueError(f"Op must be a Pauli matrix, but {Op} is not.")
+    if not isinstance(dim, int):
+        raise TypeError(f"dim must be an integer, but {dim} is not.")
+    if not isinstance(loc, list):
+        raise TypeError(f"loc must be a list, but {loc} is not.")
+    for i in loc:
+        if not isinstance(i, int):
+            raise TypeError(f"loc must be a list of integers, but {i} is not.")
 
-    if not isinstance(Op, SuperPauli and Pauli):
-        pass
+    prod_paulis = [I for i in range(dim)]
+    for i in loc:
+        prod_paulis[i] = Op
+    return Pauli(prod_paulis)
+
+def x_tensor(dim: int, loc: list):
+    """
+    Returns tensor(X, dim, loc).
+    """
+    return tensor(X, dim, loc)
+
+def y_tensor(dim: int, loc: list):
+    """
+    Returns tensor(Y, dim, loc).
+    """
+    return tensor(Y, dim, loc)
+
+def z_tensor(dim: int, loc: list):
+    """
+    Returns tensor(Z, dim, loc).
+    """
+    return tensor(Z, dim, loc)
