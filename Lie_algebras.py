@@ -60,7 +60,7 @@ def anticommutator(A: np.ndarray, B: np.ndarray):
     C = A @ B + B @ A
     return C
 
-def tensor(W: np.ndarray, dim: int, start: int, end: int = 0):
+def tensor_product(W: np.ndarray, dim: int, start: int, end: int = 0):
     """
     Return tensor product of dim operators acting with W on qubits [start, end] and trivially elsewhere.
 
@@ -850,7 +850,7 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
     if not isinstance(Op_1, list):
         raise TypeError(f"Op_1 must be a list, but {Op_1} is not.")
     for op in Op_1:
-        if not isinstance(op, Pauli or SuperPauli):
+        if not isinstance(op, Pauli and SuperPauli):
             raise TypeError(f"Op_1 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
         if isinstance(op, Pauli):
             Op_1[Op_1.index(op)] = SuperPauli([(1, op)])
@@ -866,3 +866,25 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
     # complete the algebra
     Lie_alg = pauli_complete_algebra(Ops, max)
     return Lie_alg
+
+def tensor(Op: SuperPauli or Pauli, dim: int, loc: list):
+    """
+    Calculate tensor product of Op acting on qubits in position loc and trivially elsewhere.
+    
+    Parameters
+    ----------
+    Op : SuperPauli or Pauli
+        Non-trivial operator
+    dim : int
+        Number of qubits
+    loc : list
+        List of qubits to apply Op to
+
+    Returns
+    -------
+    prod : SuperPauli
+        Tensor product acting with Op on qubits in loc and trivially elsewhere
+    """
+
+    if not isinstance(Op, SuperPauli and Pauli):
+        pass
