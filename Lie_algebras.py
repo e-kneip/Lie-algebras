@@ -613,10 +613,9 @@ def acomm_comm(A: Pauli, B: Pauli):
     # use lookup to commutate/anticommutate
     for i in range(4):
         for j in range(4):
-            ind = np.where(np.array(a_q_decomp == i) & np.array(b_q_decomp == j) == True)[0]
-            for k in ind:
-                c_q_decomp[k] = look_up[i, j, 1]
-                coeff *= look_up[i, j, 0]
+            ind = np.where((a_q_decomp == i) & (b_q_decomp == j))[0]
+            c_q_decomp[ind] = look_up[i, j, 1]
+            coeff *= look_up[i, j, 0]**len(ind)
 
     decomp = []
     for op in c_q_decomp:
