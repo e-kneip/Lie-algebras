@@ -755,21 +755,24 @@ def lin_ind(paulis: list):
     ind = rank == len(paulis)
     return ind
 
-def pauli_complete_algebra_inner(Ops: list, start: int):
+def pauli_complete_algebra_inner(Ops: list, start: int, anti = False):
     """
     Find all linearly independent operators from commutations of operators in Ops[0:len(Ops)] with operators in Ops[start:len(Ops)], using Pauli decompositions.
     """
     new_Ops = Ops.copy()
     for i in range(len(Ops)):
         for j in range(max(i, start), len(Ops)):
-            new_op = comm(new_Ops[i], new_Ops[j])
+            if anti:
+                new_op = acomm(new_Ops[i], new_Ops[j])
+            else:
+                new_op = comm(new_Ops[i], new_Ops[j])
             new_Ops.append(new_op)
             if not lin_ind(new_Ops):
                 new_Ops.pop()
     return new_Ops
 
 
-def pauli_complete_algebra(Ops: list, max: int, start: int = 0):
+def pauli_complete_algebra(Ops: list, max: int, start: int = 0, anti = False):
     """
     Find closed Lie algebra given initial set of operators, using Pauli decompositions.
 
@@ -781,6 +784,8 @@ def pauli_complete_algebra(Ops: list, max: int, start: int = 0):
         Cut off after max number of operators in Lie algebra found
     start : int
         Operator index to start verifying closedness, ie every commutation with operators before start already accounted
+    anti : bool
+        True to complete under anticommutations, False for commutations
 
     Returns
     -------
@@ -803,7 +808,7 @@ def pauli_complete_algebra(Ops: list, max: int, start: int = 0):
 
     while True:
         # find new set of linearly independent operators to extend old_Ops
-        new_Ops = pauli_complete_algebra_inner(old_Ops, start)
+        new_Ops = pauli_complete_algebra_inner(old_Ops, start, anti=anti)
 
         # number of new operators added
         added_ops = len(new_Ops) - len(old_Ops)
