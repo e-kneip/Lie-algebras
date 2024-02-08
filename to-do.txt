@@ -25,6 +25,8 @@ TO DO:
 - decompose big matrix into tensor product in superpauli instance
 - experiment with completing algebras from paper (+speed??) (as a demo it works)
 - Pauli class demo?
+- pauli_complete_algebra is checking if [op, op] should be added as well...
+- speed up lin_ind by not redoing what is already linearly independent
 
 
 ##### Problems
