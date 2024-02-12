@@ -742,44 +742,48 @@ def lin_ind(paulis: list, n: int = 0, old_basis: list = [], old_pauli_vecs: list
     vectors : list
         List of SuperPaulis decomposed using basis
     """
-    basis = []
-    for i, pauli in enumerate(paulis):
+    basis = old_basis.copy()
+    for i, pauli in enumerate(paulis[n:]):
         if isinstance(pauli, Pauli):
-            paulis[i] = SuperPauli([(1, pauli)])
+            paulis[i+n] = SuperPauli([(1, pauli)])
             pauli = SuperPauli([(1, pauli)])
         for op in pauli.pauli_list:
             if op not in basis:
                 basis.append(op)
 
-    vectors = []
-    for pauli in paulis:
-        vector = [0 for i in range(len(basis))]
-        for op, coef in zip(pauli.pauli_list, pauli.coeff_list):
-            vector[basis.index(op)] = coef
-        vectors.append(vector)
+    vectors = old_pauli_vecs.copy()
+    to_add = [0 for i in range(len(basis) - len(old_basis))]
+    for j, pauli in enumerate(paulis):
+        if j<n:
+            vectors[j] += to_add
+        else:    
+            vector = [0 for i in range(len(basis))]
+            for op, coef in zip(pauli.pauli_list, pauli.coeff_list):
+                vector[basis.index(op)] = coef
+            vectors.append(vector)
 
     rank = np.linalg.matrix_rank(np.array(vectors))
     ind = rank == len(paulis)
     return ind, basis, vectors
 
-def pauli_complete_algebra_inner(Ops: list, start: int, anti = False):
+def pauli_complete_algebra_inner(Ops: list, start: int, n: int = 0, old_basis: list = [], old_pauli_vecs: list = []):
     """
     Find all linearly independent operators from commutations of operators in Ops[0:len(Ops)] with operators in Ops[start:len(Ops)], using Pauli decompositions.
     """
     new_Ops = Ops.copy()
     for i in range(len(Ops)):
-        for j in range(max(i, start), len(Ops)):
-            if anti:
-                new_op = acomm(new_Ops[i], new_Ops[j])
-            else:
-                new_op = comm(new_Ops[i], new_Ops[j])
+        for j in range(max(i+1, start), len(Ops)):
+            new_op = comm(new_Ops[i], new_Ops[j])
             new_Ops.append(new_op)
-            if not lin_ind(new_Ops)[0]:
+            lind, old_basis, old_pauli_vecs = lin_ind(new_Ops, n, old_basis, old_pauli_vecs)
+            if not lind:
                 new_Ops.pop()
-    return new_Ops
+                old_pauli_vecs.pop()
+            n = len(old_pauli_vecs)
+    return new_Ops, n, old_basis, old_pauli_vecs
 
 
-def pauli_complete_algebra(Ops: list, max: int, start: int = 0, anti = False):
+def pauli_complete_algebra(Ops: list, max: int, start: int = 0):
     """
     Find closed Lie algebra given initial set of operators, using Pauli decompositions.
 
@@ -791,8 +795,6 @@ def pauli_complete_algebra(Ops: list, max: int, start: int = 0, anti = False):
         Cut off after max number of operators in Lie algebra found
     start : int
         Operator index to start verifying closedness, ie every commutation with operators before start already accounted
-    anti : bool
-        True to complete under anticommutations, False for commutations
 
     Returns
     -------
@@ -812,10 +814,13 @@ def pauli_complete_algebra(Ops: list, max: int, start: int = 0, anti = False):
         )
 
     old_Ops = Ops.copy()
+    old_basis = []
+    old_pauli_vecs = []
+    n = 0
 
     while True:
         # find new set of linearly independent operators to extend old_Ops
-        new_Ops = pauli_complete_algebra_inner(old_Ops, start, anti=anti)
+        new_Ops, n, old_basis, old_pauli_vecs = pauli_complete_algebra_inner(old_Ops, start, n, old_basis, old_pauli_vecs)
 
         # number of new operators added
         added_ops = len(new_Ops) - len(old_Ops)
@@ -868,13 +873,24 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
             Op_1[i] = SuperPauli([(1, op)])
 
     Ops = Op_0.copy()
+    ind, old_basis, old_pauli_vecs = lin_ind(Ops)
+    n = len(Ops)
+    if not ind:
+        raise LinearIndependenceError(
+            "Given operators in Op_0 are not linearly independent."
+        )
     # append every commutation that is linearly independent
     for i in range(len(Op_0)):
         for j in range(len(Op_1)):
             new_op = comm(Op_0[i], Op_1[j])
             Ops.append(new_op)
-            if not lin_ind(Ops)[0]:
+            ind, old_basis, old_pauli_vecs = lin_ind(Ops, n, old_basis, old_pauli_vecs)
+            if not ind:
                 Ops.pop()
+                old_basis.pop()
+                old_pauli_vecs.pop()
+            else:
+                n += 1
     # complete the algebra
     Lie_alg = pauli_complete_algebra(Ops, max)
     return Lie_alg
