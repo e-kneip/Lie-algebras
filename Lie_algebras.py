@@ -718,7 +718,7 @@ def acomm(A: Pauli or SuperPauli, B: Pauli or SuperPauli):
 
     return SuperPauli(list(paulis))
 
-def lin_ind(paulis: list, n: int, old_basis: list, old_pauli_vecs: list):
+def lin_ind(paulis: list, n: int = 0, old_basis: list = [], old_pauli_vecs: list = []):
     """
     Determines whether a list of SuperPauli tensor products are linearly independent.
 
@@ -737,6 +737,10 @@ def lin_ind(paulis: list, n: int, old_basis: list, old_pauli_vecs: list):
     -------
     ind : bool
         List of Pauli tensor products are linearly independent, true or false
+    basis : list
+        List of Paulis forming basis for all SuperPaulis
+    vectors : list
+        List of SuperPaulis decomposed using basis
     """
     basis = []
     for i, pauli in enumerate(paulis):
@@ -749,17 +753,14 @@ def lin_ind(paulis: list, n: int, old_basis: list, old_pauli_vecs: list):
 
     vectors = []
     for pauli in paulis:
-        vector = []
-        for op in basis:
-            if op in pauli.pauli_list:
-                vector.append(pauli.coeff_list[pauli.pauli_list.index(op)])
-            else:
-                vector.append(0)
+        vector = [0 for i in range(len(basis))]
+        for op, coef in zip(pauli.pauli_list, pauli.coeff_list):
+            vector[basis.index(op)] = coef
         vectors.append(vector)
 
     rank = np.linalg.matrix_rank(np.array(vectors))
     ind = rank == len(paulis)
-    return ind
+    return ind, basis, vectors
 
 def pauli_complete_algebra_inner(Ops: list, start: int, anti = False):
     """
@@ -773,7 +774,7 @@ def pauli_complete_algebra_inner(Ops: list, start: int, anti = False):
             else:
                 new_op = comm(new_Ops[i], new_Ops[j])
             new_Ops.append(new_op)
-            if not lin_ind(new_Ops):
+            if not lin_ind(new_Ops)[0]:
                 new_Ops.pop()
     return new_Ops
 
@@ -800,12 +801,12 @@ def pauli_complete_algebra(Ops: list, max: int, start: int = 0, anti = False):
     """
     if not isinstance(Ops, list):
         raise TypeError(f"Ops must be a list, but {Ops} is not.")
-    for op in Ops:
+    for i, op in enumerate(Ops):
         if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
             raise TypeError(f"Ops must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
         if isinstance(op, Pauli):
-            Ops[Ops.index(op)] = SuperPauli([(1, op)])
-    if not lin_ind(Ops):
+            Ops[i] = SuperPauli([(1, op)])
+    if not lin_ind(Ops)[0]:
         raise LinearIndependenceError(
             "Given operators are not linearly independent."
         )
@@ -853,18 +854,18 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
     """
     if not isinstance(Op_0, list):
         raise TypeError(f"Op_0 must be a list, but {Op_0} is not.")
-    for op in Op_0:
+    for i, op in enumerate(Op_0):
         if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
             raise TypeError(f"Op_0 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
         if isinstance(op, Pauli):
-            Op_0[Op_0.index(op)] = SuperPauli([(1, op)])
+            Op_0[i] = SuperPauli([(1, op)])
     if not isinstance(Op_1, list):
         raise TypeError(f"Op_1 must be a list, but {Op_1} is not.")
-    for op in Op_1:
+    for i, op in enumerate(Op_1):
         if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
             raise TypeError(f"Op_1 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
         if isinstance(op, Pauli):
-            Op_1[Op_1.index(op)] = SuperPauli([(1, op)])
+            Op_1[i] = SuperPauli([(1, op)])
 
     Ops = Op_0.copy()
     # append every commutation that is linearly independent
@@ -872,7 +873,7 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
         for j in range(len(Op_1)):
             new_op = comm(Op_0[i], Op_1[j])
             Ops.append(new_op)
-            if not lin_ind(Ops):
+            if not lin_ind(Ops)[0]:
                 Ops.pop()
     # complete the algebra
     Lie_alg = pauli_complete_algebra(Ops, max)
