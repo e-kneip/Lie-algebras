@@ -718,7 +718,7 @@ def acomm(A: Pauli or SuperPauli, B: Pauli or SuperPauli):
 
     return SuperPauli(list(paulis))
 
-def lin_ind(paulis: list):
+def lin_ind(paulis: list, n: int, old_basis: list, old_pauli_vecs: list):
     """
     Determines whether a list of SuperPauli tensor products are linearly independent.
 
@@ -726,6 +726,12 @@ def lin_ind(paulis: list):
     ----------
     paulis : list
         List of SuperPauli tensor products
+    n : int
+        Number of SuperPaulis already known to be linearly independent
+    old_basis : list
+        List of Paulis forming basis for first n SuperPaulis
+    old_pauli_vecs : list
+        List of first n SuperPaulis decomposed using old_basis
 
     Returns
     -------
@@ -733,9 +739,9 @@ def lin_ind(paulis: list):
         List of Pauli tensor products are linearly independent, true or false
     """
     basis = []
-    for pauli in paulis:
+    for i, pauli in enumerate(paulis):
         if isinstance(pauli, Pauli):
-            paulis[paulis.index(pauli)] = SuperPauli([(1, pauli)])
+            paulis[i] = SuperPauli([(1, pauli)])
             pauli = SuperPauli([(1, pauli)])
         for op in pauli.pauli_list:
             if op not in basis:
