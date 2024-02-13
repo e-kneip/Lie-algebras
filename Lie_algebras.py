@@ -887,7 +887,6 @@ def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
             ind, old_basis, old_pauli_vecs = lin_ind(Ops, n, old_basis, old_pauli_vecs)
             if not ind:
                 Ops.pop()
-                old_basis.pop()
                 old_pauli_vecs.pop()
             else:
                 n += 1
