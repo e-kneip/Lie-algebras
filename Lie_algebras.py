@@ -437,6 +437,7 @@ class SuperPauli:
         """
         coeff_list = []
         pauli_list = []
+        new_paulis = []
         # check correct input
         if not isinstance(paulis, list):
             raise TypeError(f"Decomposition {paulis} must be a list.")
@@ -448,11 +449,13 @@ class SuperPauli:
                 raise TypeError(f"Coefficient {i} must be a number.")
             if not isinstance(j, Pauli):
                 raise TypeError(f"Pauli {j} must be a Pauli tensor product.")
-            coeff_list.append(i)
-            pauli_list.append(j)
+            if i != 0:
+                new_paulis.append(op)
+                coeff_list.append(i)
+                pauli_list.append(j)
 
         # set attributes
-        self.paulis = paulis
+        self.paulis = new_paulis
         self.coeff_list = coeff_list
         self.pauli_list = pauli_list
 
