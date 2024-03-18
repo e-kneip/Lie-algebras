@@ -844,7 +844,7 @@ def pauli_complete_algebra(Ops: list, max: int, start: int = 0):
 
 def pauli_find_algebra(Op_0: list, Op_1: list, max: int):
     """
-    Extend operators Op_0 to include commutations with operators in Op_1.
+    Extend operators Op_0 to include commutations with operators in Op_1 and complete the algebra.
 
     Parameters
     ----------
@@ -947,3 +947,60 @@ def z_tensor(dim: int, loc: list):
     Returns tensor(Z, dim, loc).
     """
     return tensor(Z, dim, loc)
+
+def pauli_make_algebra(Op_1: list, Op_2: list, max: int):
+    """
+    Construct set of operators from Op_1 closed under commutations with Op_2.
+    
+    Parameters
+    ----------
+    Op_1 : list
+        List of operators (defines invariants)
+    Op_2 : list
+        List of operators (defines H)
+    max : int
+        Stop iterations at maximum number of operators in algebra
+
+    Returns
+    -------
+    Lie_alg : list
+        List of operators in extended Lie algebra
+    """
+    if not isinstance(Op_1, list):
+        raise TypeError(f"Op_1 must be a list, but {Op_1} is not.")
+    for i, op in enumerate(Op_1):
+        if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
+            raise TypeError(f"Op_1 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
+        if isinstance(op, Pauli):
+            Op_1[i] = SuperPauli([(1, op)])
+    if not isinstance(Op_2, list):
+        raise TypeError(f"Op_2 must be a list, but {Op_2} is not.")
+    for i, op in enumerate(Op_2):
+        if not isinstance(op, Pauli) and not isinstance(op, SuperPauli):
+            raise TypeError(f"Op_2 must be a list of Pauli tensor products (Pauli or SuperPauli), but {op} is not.")
+        if isinstance(op, Pauli):
+            Op_2[i] = SuperPauli([(1, op)])
+
+    op_1, op_2 = Op_1.copy(), Op_2.copy()
+    Lie_alg = Op_1.copy()
+    old_basis, old_pauli_vecs = [], []
+    n = 0
+    while True:
+        for op in op_2:
+            print(Lie_alg)
+            new_op = comm(op_1[0], op)
+            Lie_alg.append(new_op)
+            ind, old_basis, old_pauli_vecs = lin_ind(Lie_alg, n, old_basis, old_pauli_vecs)
+            if not ind:
+                Lie_alg.pop()
+            else:
+                n = len(Lie_alg)
+                op_1.append(new_op)
+            if len(Lie_alg) > max:
+                raise MaxOperatorsError(
+                    f"Maximum of {max} operators in uncomplete algebra reached."
+                )
+        op_1.pop(0)
+        if len(op_1) == 0:
+            break
+    return Lie_alg
