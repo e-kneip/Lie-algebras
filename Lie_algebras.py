@@ -987,12 +987,14 @@ def pauli_make_algebra(Op_1: list, Op_2: list, max: int):
     n = 0
     while True:
         for op in op_2:
-            print(Lie_alg)
             new_op = comm(op_1[0], op)
+            if len(new_op) == 0:
+                break
             Lie_alg.append(new_op)
             ind, old_basis, old_pauli_vecs = lin_ind(Lie_alg, n, old_basis, old_pauli_vecs)
             if not ind:
                 Lie_alg.pop()
+                old_pauli_vecs.pop()
             else:
                 n = len(Lie_alg)
                 op_1.append(new_op)
