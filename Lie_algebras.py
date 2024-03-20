@@ -988,20 +988,19 @@ def pauli_make_algebra(Op_1: list, Op_2: list, max: int):
     while True:
         for op in op_2:
             new_op = comm(op_1[0], op)
-            if len(new_op) == 0:
-                break
-            Lie_alg.append(new_op)
-            ind, old_basis, old_pauli_vecs = lin_ind(Lie_alg, n, old_basis, old_pauli_vecs)
-            if not ind:
-                Lie_alg.pop()
-                old_pauli_vecs.pop()
-            else:
-                n = len(Lie_alg)
-                op_1.append(new_op)
-            if len(Lie_alg) > max:
-                raise MaxOperatorsError(
-                    f"Maximum of {max} operators in uncomplete algebra reached."
-                )
+            if len(new_op) != 0:
+                Lie_alg.append(new_op)
+                ind, old_basis, old_pauli_vecs = lin_ind(Lie_alg, n, old_basis, old_pauli_vecs)
+                if not ind:
+                    Lie_alg.pop()
+                    old_pauli_vecs.pop()
+                else:
+                    n = len(Lie_alg)
+                    op_1.append(new_op)
+                if len(Lie_alg) > max:
+                    raise MaxOperatorsError(
+                        f"Maximum of {max} operators in uncomplete algebra reached."
+                    )
         op_1.pop(0)
         if len(op_1) == 0:
             break
