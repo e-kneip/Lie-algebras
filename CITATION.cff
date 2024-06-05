@@ -4,3 +4,6 @@ authors:
   - family-names: Kneip
     given-names: Eleanor
 title: "Lie Algebras"
+abstract: "A package for manipulating operators efficiently and constructing Lie algebras."
+repository-code: "https://github.com/e-kneip/Lie-algebras"
+# date-released: "2023-6-10"
