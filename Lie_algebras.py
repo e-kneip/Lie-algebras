@@ -1005,3 +1005,24 @@ def pauli_make_algebra(Op_1: list, Op_2: list, max: int):
         if len(op_1) == 0:
             break
     return Lie_alg
+
+def filtering(ops, n):
+    """Return operators with n-body interactions."""
+    filtered_list = []
+    for superpauli in ops:
+        for pauli in superpauli.paulis:
+            q_decomp = pauli[1].q_decomp
+            if np.count_nonzero(q_decomp) == n:
+                filtered_list.append(pauli)
+    return filtered_list
+
+def sort(ops):
+    """Return all operators acting trivially everywhere, except qubit 1 and 2"""
+    sorted_list = []
+    for superpauli in ops:
+        for pauli in superpauli.paulis:
+            q_decomp = pauli[1].q_decomp
+            n = len(q_decomp)
+            if sum(q_decomp[2:n]) == 0:
+                sorted_list.append(pauli)
+    return sorted_list
